@@ -1,0 +1,32 @@
+name: Bug report / 问题报告
+description: Report incorrect state, caret, permissions or launch behavior / 报告状态、光标、权限或启动问题
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: Versions and environment / 版本与环境
+      description: macOS, chip, DoubaoCaret, Doubao IME and target application versions / 系统、芯片、工具、豆包及目标应用版本
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction and expected behavior / 复现步骤与预期
+      description: Include display mode and the actual result / 包含显示模式和实际结果
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Permissions and caret diagnostics / 权限与光标诊断
+      description: Copy from the app menu; remove sensitive data. Do not include typed content. / 从菜单复制，去除敏感信息，不要上传输入内容。
+      render: text
+  - type: dropdown
+    id: source
+    attributes:
+      label: Build source / 构建来源
+      options:
+        - GitHub Release
+        - GitHub CI artifact / CI 产物
+        - Local macOS build / Mac 本机构建
+        - Linux cross-build / Linux 交叉编译

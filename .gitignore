@@ -1,0 +1,17 @@
+.build/
+build/
+dist/
+.toolchain/
+.DS_Store
+*.xcuserstate
+__pycache__/
+# Local build investigations and agent metadata are not release sources.
+BUILD-REPORT.md
+.agents/
+.codex/
+*.p12
+*.p8
+*.pem
+*.keychain-db
+.env
+.env.*

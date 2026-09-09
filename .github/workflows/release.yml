@@ -1,0 +1,106 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 40
+    env:
+      SIGNING_MODE: ${{ vars.MACOS_SIGNING_MODE || 'adhoc' }}
+      RELEASE_TAG: ${{ github.ref_name }}
+    outputs:
+      tag: ${{ steps.assets.outputs.tag }}
+      prerelease: ${{ steps.assets.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Validate release inputs before building
+        run: |
+          case "$SIGNING_MODE" in
+            adhoc|developer-id-notarized) ;;
+            *) echo 'MACOS_SIGNING_MODE must be adhoc or developer-id-notarized' >&2; exit 1 ;;
+          esac
+          python3 scripts/validate-version.py "$RELEASE_TAG"
+      - name: Test state and geometry
+        run: bash scripts/test-core.sh
+      - name: Build universal app
+        run: bash scripts/build-macos.sh
+      - name: Test archive integrity and release tooling
+        run: |
+          python3 scripts/verify-artifact.py dist/DoubaoCaret.app
+          python3 Tests/test-artifact.py
+          python3 Tests/test-release.py
+      - name: Developer ID sign and notarize
+        if: env.SIGNING_MODE == 'developer-id-notarized'
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          APPLE_NOTARY_KEY_P8_BASE64: ${{ secrets.APPLE_NOTARY_KEY_P8_BASE64 }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: bash scripts/sign-release-macos.sh
+      - name: Verify final signed app
+        run: |
+          codesign --verify --strict --verbose=2 dist/DoubaoCaret.app
+          python3 scripts/verify-artifact.py dist/DoubaoCaret.app
+      - name: AppKit startup smoke test
+        run: dist/DoubaoCaret.app/Contents/MacOS/DoubaoCaret --smoke-test
+        timeout-minutes: 1
+      - name: Prepare checksums and bilingual release notes
+        id: assets
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 scripts/prepare-release.py --tag "$RELEASE_TAG" \
+            --repository "$REPOSITORY" --commit "$(git rev-parse HEAD)" --signing "$SIGNING_MODE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: ${{ steps.assets.outputs.asset_dir }}/*
+          if-no-files-found: error
+          retention-days: 14
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-${{ github.sha }}
+          path: release-assets
+      - name: Verify downloaded checksums
+        working-directory: release-assets
+        run: sha256sum -c SHA256SUMS
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.build.outputs.tag }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; refusing to replace published assets." >&2
+            exit 1
+          fi
+          flags=()
+          if [[ "$PRERELEASE" == true ]]; then flags+=(--prerelease); fi
+          gh release create "$RELEASE_TAG" --verify-tag \
+            --title "DoubaoCaret $RELEASE_TAG" --notes-file release-assets/RELEASE-NOTES.md \
+            "${flags[@]}" \
+            "release-assets/DoubaoCaret-$RELEASE_TAG-macos-universal.zip" \
+            release-assets/SHA256SUMS release-assets/build-metadata.json
