@@ -20,6 +20,16 @@ A native Swift + AppKit macOS menu bar utility with no Dock icon or third-party 
 - A nonactivating, click-through indicator, with intended multi-display, Space and fullscreen support.
 - Enable/disable, launch at login, manual calibration, permission repair and copyable diagnostics.
 
+## Screenshots
+
+**Settings and live preview:** adjust tracking mode, position, X/Y offsets, and separate Chinese/English labels, colors and appearance. The preview shows both modes together; changes apply immediately and save automatically. The screenshots show the current Chinese UI.
+
+<img src="docs/images/settings.png" width="576" alt="DoubaoCaret settings: Chinese and English live preview, caret-first mode, position offsets and appearance controls">
+
+**Permissions and update repair:** check Accessibility and Input Monitoring status, open the corresponding system settings, or copy this app's permission repair commands. After a reset, access must still be granted manually in System Settings.
+
+<img src="docs/images/permission.png" width="496" alt="DoubaoCaret permission window: permission status, recheck controls and copyable repair commands">
+
 ## Download and install
 
 1. Open this repository's **[Releases](../../releases)** and download `DoubaoCaret-v<version>-macos-universal.zip`.

@@ -20,6 +20,16 @@ Swift + AppKit 原生 macOS 菜单栏应用，无 Dock 图标，无第三方运�
 - 指示器不抢焦点、不接收鼠标事件；尝试支持多屏、Space 和全屏应用。
 - 启用/停用、登录启动、手动校准、权限修复、可复制诊断。
 
+## 界面截图
+
+**设置与实时预览**：调整跟随模式、相对位置、X/Y 偏移，以及中英文文字、颜色和外观。顶部预览同时展示两种状态，修改立即生效并自动保存。
+
+<img src="docs/images/settings.png" width="576" alt="DoubaoCaret 设置窗口：中英文实时预览、Caret 优先模式、位置偏移和外观选项">
+
+**权限与更新修复**：查看辅助功能和输入监控状态，打开对应系统设置，或复制本应用的权限修复命令。重置后仍需在系统设置中手动授权。
+
+<img src="docs/images/permission.png" width="496" alt="DoubaoCaret 权限与更新修复窗口：权限状态、重新检测和复制修复命令">
+
 ## 下载与安装
 
 1. 在本仓库 **[Releases](../../releases)** 下载 `DoubaoCaret-v<版本>-macos-universal.zip`。
